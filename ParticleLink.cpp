@@ -29,9 +29,7 @@ int ParticleLink::CheckForSerialMessage(mavlink_message_t* Message, mavlink_stat
 int ParticleLink::CheckForNetworkMessage(UDP* Udp, IPAddress* Remote, mavlink_message_t* Message, mavlink_status_t* Status, uint8_t* MessageBuff)
 {
 	
-	Udp->parsePacket();
-
-	if(Udp->available())
+	if(Udp->parsePacket() > 0)
 	{
 		*Remote = Udp->remoteIP();
 		while(Udp->available())
@@ -40,6 +38,7 @@ int ParticleLink::CheckForNetworkMessage(UDP* Udp, IPAddress* Remote, mavlink_me
 			if(mavlink_parse_char(MAVLINK_COMM_0,c,Message,Status))
 			{
 				uint16_t bytes = mavlink_msg_to_send_buffer(MessageBuff, Message);
+				Serial.printf("%d\n", bytes);
 				return bytes;
 			}
 		}
@@ -54,9 +53,9 @@ int ParticleLink::SendMessageOnSerial(uint8_t* MessageBuff, uint16_t len)
 	return (BytesSent == len);
 }
 
-int ParticleLink::SendMessageOnNetwork(UDP* Udp, IPAddress* Remote, uint16_t UdpPort, uint8_t* MessageBuff, uint16_t len)
+int ParticleLink::SendMessageOnNetwork(UDP* Udp, IPAddress Remote, uint16_t UdpPort, uint8_t* MessageBuff, uint16_t len)
 {
-	Udp->beginPacket(*Remote, UdpPort);
+	Udp->beginPacket(Remote, UdpPort);
 	int BytesSent = Udp->write(MessageBuff, len);
 
 	Udp->endPacket();
